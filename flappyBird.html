@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+
+    <script>
+        let bird;
+        let birdMoveUp;
+        let sky;
+        let velocityY;
+        let tmp = 0;
+
+        let pipeUp = [];
+        let pipeDown = [];
+
+        let collisionsUp = [];
+        let collisionsDown = [];
+
+        let gameOver;
+        let gameOverText;
+        let gameOverButton;
+        let newGameButton;
+        let pauseButton;
+        let playButton;
+        let paused;
+
+        let score = 0;
+        let textScoreAsset;
+
+        let highScore;
+        let textHighScoreAsset;
+
+        let background_music;
+        let bird_flap;
+        let score_add;
+        let gameOver_music;
+
+        let settings_background;
+        let settings_text;
+        let settings_text_background_music;
+        let settings_text_sound_effects;
+        let settings_checked_background_music;
+        let settings_checked_sound_effects;
+        let settings_unchecked_background_music;
+        let settings_unchecked_sound_effects;
+
+        let background_music_on;
+        let sound_effects_on;
+
+        let coin;
+        let coinPicked;
+        let tmpToGetBack;
+
+        let tmpForwarded;
+
+        class Example extends Phaser.Scene {
+            preload() {
+                this.load.image('frame1', 'https://mikeyyy2k23.github.io/FlappyBird/flyingBirdAnimation/Frame-1.png');
+                this.load.image('frame2', 'https://mikeyyy2k23.github.io/FlappyBird/flyingBirdAnimation/frame-2.png');
+                this.load.image('frame3', 'https://mikeyyy2k23.github.io/FlappyBird/flyingBirdAnimation/frame-3.png');
+                this.load.image('frame4', 'https://mikeyyy2k23.github.io/FlappyBird/flyingBirdAnimation/frame-4.png');
+
+                this.load.image('cframe1', 'https://mikeyyy2k23.github.io/FlappyBird/CoinAnimation/frame1.png');
+                this.load.image('cframe2', 'https://mikeyyy2k23.github.io/FlappyBird/CoinAnimation/frame2.png');
+                this.load.image('cframe3', 'https://mikeyyy2k23.github.io/FlappyBird/CoinAnimation/frame3.png');
+                this.load.image('cframe4', 'https://mikeyyy2k23.github.io/FlappyBird/CoinAnimation/frame4.png');
+                this.load.image('cframe5', 'https://mikeyyy2k23.github.io/FlappyBird/CoinAnimation/frame5.png');
+                this.load.image('cframe6', 'https://mikeyyy2k23.github.io/FlappyBird/CoinAnimation/frame6.png');
+
+                this.load.image('cherry', 'https://mikeyyy2k23.github.io/FlappyBird/red-cherry.png');
+                this.load.image('forward', 'https://mikeyyy2k23.github.io/FlappyBird/forward.png')
+
+                this.load.image('sky', 'https://mikeyyy2k23.github.io/FlappyBird/sky.png');
+
+                this.load.image('pipe', 'https://mikeyyy2k23.github.io/FlappyBird/pipe.png');
+
+                this.load.image('new_game_button', 'https://mikeyyy2k23.github.io/FlappyBird/new_game_buton.png');
+
+                this.load.image('pause_button', 'https://mikeyyy2k23.github.io/FlappyBird/pause.png');
+                this.load.image('play_button', 'https://mikeyyy2k23.github.io/FlappyBird/play.png')
+                this.load.image('unchecked', 'https://mikeyyy2k23.github.io/FlappyBird/checkbox.png');
+                this.load.image('checked', 'https://mikeyyy2k23.github.io/FlappyBird/checkboxchecked.png');
+
+                this.load.audio('background_music', 'https://mikeyyy2k23.github.io/FlappyBird/Background_music.ogg');
+                this.load.audio('bird_flap', 'https://mikeyyy2k23.github.io/FlappyBird/bird_flap.flac');
+                this.load.audio('score_add', 'https://mikeyyy2k23.github.io/FlappyBird/coin02.ogg');
+                this.load.audio('game_over_music', 'https://mikeyyy2k23.github.io/FlappyBird/game_over.wav');
+                this.load.audio('coinPicked', 'https://mikeyyy2k23.github.io/FlappyBird/coinSound.wav');
+
+            }
+            create() {
+                tmpToGetBack = -1;
+                tmpForwarded = -1;
+
+                if (localStorage.getItem('background_music') == null) {
+                    background_music_on = true;
+                }
+                else background_music_on = JSON.parse(localStorage.getItem('background_music'));
+
+                if (localStorage.getItem('sound_effects') == null) {
+                    sound_effects_on = true;
+                }
+                else sound_effects_on = JSON.parse(localStorage.getItem('sound_effects'));
+
+
+                gameOver = false;
+                gameOverText = this.add.text(this.cameras.main.width / 2 - 125, this.cameras.main.height / 2 - 50, 'Game Over', { fontFamily: 'Arial', fontSize: '48px', fill: '#ff0000' });
+                gameOverText.setDepth(2);
+                gameOverText.setVisible(false);
+
+                newGameButton = this.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 + 50, 'new_game_button').setInteractive();
+                newGameButton.setDepth(2);
+                newGameButton.setScale(0.15);
+                newGameButton.setVisible(false);
+
+                newGameButton.on('pointerdown', function () {
+                    tmp = 0;
+                    gameOver = false;
+                    if (background_music_on) background_music.play();
+                    gameOver_music.stop();
+                    score = 0;
+                    bird.y = 200;
+                    bird.setVelocityY(0);
+                    for (var i = 0; i < pipeUp.length; i++) {
+                        pipeUp[i].destroy();
+                        pipeDown[i].destroy();
+                    }
+                    pipeDown = [];
+                    pipeUp = [];
+
+                    coin.x = -100;
+                    tmpToGetBack = -1;
+                    tmpForwarded = 0;
+
+                    newGameButton.setVisible(false);
+                    gameOverText.setVisible(false);
+
+                    for (var i = 0; i < collisionsUp.length; i++) {
+                        collisionsUp[i].destroy();
+                        collisionsDown[i].destroy();
+                    }
+
+                    collisionsUp = [];
+                    collisionsDown = [];
+                }, this);
+
+                sky = this.add.tileSprite(0, 0, game.config.width* 2, game.config.height, 'sky');
+                sky.setOrigin(0, 0);
+                sky.setScrollFactor(1, 0);
+                sky.setDepth(0);
+
+                velocityY = 200;
+                bird = this.physics.add.sprite(400, 300, 'frame1');
+                bird.setScale(0.075);
+                bird.setCollideWorldBounds(true);
+
+
+                this.anims.create({
+
+                    key: 'coinAnimation',
+                    frames: [
+                        { key: 'cframe1' },
+                        { key: 'cframe2' },
+                        { key: 'cframe3' },
+                        { key: 'cframe4' },
+                        { key: 'cframe5' },
+                        { key: 'cframe6' },
+                    ],
+                    frameRate: 10,
+                    repeat: -1
+                })
+                
+
+                this.anims.create({
+                    key: 'flyingBirdAnimation',
+                    frames: [
+                        { key: 'frame1' },
+                        { key: 'frame2' },
+                        { key: 'frame3' },
+                        { key: 'frame4' },
+                    ],
+                    frameRate: 10,
+                    repeat: 0
+                });
+
+                bird_flap = this.sound.add('bird_flap', { loop: false, volume: 1 });
+                coinPicked = this.sound.add('coinPicked', { loop: false, volume: 1 });
+
+                this.input.on('pointerdown', function (pointer) {
+                    if (!paused) {
+                        velocityY = -300;
+                    }
+                    if (!gameOver && !paused) {
+                        bird.anims.play('flyingBirdAnimation', true);
+                        if (sound_effects_on) bird_flap.play();
+                    }
+
+                });
+
+                bird.setDepth(2);
+
+                settings_background = this.add.rectangle(400, 200, 250, 200, 0xFF69B4);
+                settings_background.setDepth(3);
+                settings_background.setVisible(false);
+
+                settings_text = this.add.text(335,100, "Settings", { fontFamily: 'Arial', fontSize: '35px',fontWeight:'bold', fill: '#ffffff' });
+                settings_text.setDepth(3);
+                settings_text.setVisible(false);
+
+                settings_text_background_music = this.add.text(285, 180, "Background music", { fontFamily: 'Arial', fontSize: '18px', fill: '#ffffff' });
+                settings_text_background_music.setDepth(3);
+                settings_text_background_music.setVisible(false);
+
+                settings_text_sound_effects = this.add.text(285, 230, "sound effects", { fontFamily: 'Arial', fontSize: '18px', fill: '#ffffff' });
+                settings_text_sound_effects.setDepth(3);
+                settings_text_sound_effects.setVisible(false);
+
+                settings_unchecked_background_music = this.add.sprite(475, 190, 'unchecked').setInteractive();
+                settings_unchecked_background_music.setScale(0.175);
+                settings_unchecked_background_music.setDepth(3);
+                settings_unchecked_background_music.setVisible(false);
+
+                settings_unchecked_background_music.on('pointerdown', function (pointer) {
+                    background_music_on = true;
+                    if (!gameOver) background_music.play();
+                    localStorage.setItem('background_music', true);
+                    settings_unchecked_background_music.setVisible(false);
+                    settings_checked_background_music.setVisible(true);
+                });
+
+                settings_unchecked_sound_effects = this.add.sprite(475, 240, 'unchecked').setInteractive();
+                settings_unchecked_sound_effects.setScale(0.175);
+                settings_unchecked_sound_effects.setDepth(3);
+                settings_unchecked_sound_effects.setVisible(false);
+
+                settings_unchecked_sound_effects.on('pointerdown', function (pointer) {
+                    sound_effects_on = true;
+                    localStorage.setItem('sound_effects', true);
+                    settings_unchecked_sound_effects.setVisible(false);
+                    settings_checked_sound_effects.setVisible(true);
+                });
+
+                settings_checked_background_music = this.add.sprite(475, 190, 'checked').setInteractive();
+                settings_checked_background_music.setScale(0.175);
+                settings_checked_background_music.setDepth(3);
+                settings_checked_background_music.setVisible(false);
+
+                settings_checked_background_music.on('pointerdown', function (pointer) {
+                    background_music_on = false;
+                    background_music.stop();
+                    localStorage.setItem('background_music', false);
+                    settings_checked_background_music.setVisible(false);
+                    settings_unchecked_background_music.setVisible(true);
+                });
+
+                settings_checked_sound_effects = this.add.sprite(475, 240, 'checked').setInteractive();
+                settings_checked_sound_effects.setScale(0.175);
+                settings_checked_sound_effects.setDepth(3);
+                settings_checked_sound_effects.setVisible(false);
+
+                settings_checked_sound_effects.on('pointerdown', function (pointer) {
+                    sound_effects_on = false;
+                    gameOver_music.stop();
+                    localStorage.setItem('sound_effects', false);
+                    settings_checked_sound_effects.setVisible(false);
+                   settings_unchecked_sound_effects.setVisible(true);
+                });
+
+                pauseButton = this.add.sprite(70, 150, 'pause_button').setInteractive();
+                pauseButton.setDepth(2);
+
+                playButton = this.add.sprite(70, 150, 'play_button').setInteractive();
+                playButton.setDepth(2);
+                playButton.setVisible(false);
+
+
+                pauseButton.on('pointerdown', function (pointer) {
+                    paused = true;
+                    newGameButton.disableInteractive();
+                    settings_background.setVisible(true);
+                    settings_text.setVisible(true);
+                    settings_text_background_music.setVisible(true);
+                    settings_text_sound_effects.setVisible(true);
+
+                    if (background_music_on) {
+                        settings_checked_background_music.setVisible(true);
+                    }
+                    else settings_unchecked_background_music.setVisible(true);
+
+                    if (sound_effects_on) {
+                        settings_checked_sound_effects.setVisible(true);
+                    }
+                    else settings_unchecked_sound_effects.setVisible(true);
+
+                    pauseButton.setVisible(false);
+                    playButton.setVisible(true);
+                });
+
+                playButton.on('pointerdown', function (pointer) {
+                    paused = false;
+                    newGameButton.setInteractive();
+                    settings_background.setVisible(false);
+                    settings_text.setVisible(false);
+                    settings_text_background_music.setVisible(false);
+                    settings_text_sound_effects.setVisible(false);
+                    settings_checked_background_music.setVisible(false);
+                    settings_unchecked_background_music.setVisible(false);
+                    settings_checked_sound_effects.setVisible(false);
+                    settings_unchecked_sound_effects.setVisible(false);
+
+                    playButton.setVisible(false);
+                    pauseButton.setVisible(true);
+                });
+
+
+                textScoreAsset = this.add.text(40, 50, "Score: 0", { fontFamily: 'Arial', fontSize: '24px', fill: '#ffffff' });
+                textScoreAsset.setDepth(1);
+
+                textHighScoreAsset = this.add.text(40, 80, "", { fontFamily: 'Arial', fontSize: '24px', fill: '#ffffff' });
+                textHighScoreAsset.setDepth(1);
+                updateHighScore();
+
+                background_music = this.sound.add('background_music', { loop: true, volume: 1 });
+                if(background_music_on) background_music.play();
+
+                score_add = this.sound.add('score_add', { loop: false, volume: 1 });
+                gameOver_music = this.sound.add('game_over_music', { loop: false, volume: 1 * 2 });
+
+                coin = this.add.sprite(-10, 100, "cframe1");
+                coin.setDepth(-1);
+
+                
+            }
+
+            update() {
+                if (!gameOver && !paused) {
+                    if (tmpForwarded < tmp) {
+                        if (sky.x % 0.5 == 0.25 || sky.x % 0.5 == 0.75 || sky.x % 0.5 == -0.25 || sky.x % 0.5 == -0.75) sky.x -= 0.25;
+                        sky.x -= 0.5;
+                    }
+                    else sky.x -= 0.25;
+                }
+  
+                if (sky.x + 720 < 0) {
+                    sky.x = 0;
+                }
+
+
+                if (tmpToGetBack <= tmp) {
+                    bird.setAlpha(1);
+                }
+                textScoreAsset.setText("Score: " + score);
+
+                if (gameOver && bird.y > 377) {
+                    gameOverText.setVisible(true);
+                    newGameButton.setVisible(true);
+                }
+
+                if (!paused) {
+                    if (tmpForwarded >= tmp) tmp += 0.5;
+                    else tmp += 1;
+                }
+                if (tmp % 1 == 0.5 && tmpForwarded < tmp) tmp += 0.5;
+                for (var i = pipeUp.length - 1; i >= 0; i--) {
+                    if (pipeUp[i].x < 0-pipeUp[i].width/2) {
+                        pipeDown.splice(i, 1);
+                        pipeUp.splice(i, 1);
+                    }
+                }
+
+                if (bird.y > 377) {
+                    setGameOver();
+                }
+
+                if (!paused && coin && !gameOver) {
+                    if (tmpForwarded >= tmp) coin.x -= 1;
+                    else coin.x -= 2;
+                }
+                if (tmp % 100 == 50 && tmp > 100) {
+                    if (coin.x < 0) {
+                        if (getRandomInt(1, 100) % 3 == 1) {
+                            let t = getRandomInt(1, 100);
+
+                            if (t % 3 == 0) {
+                                coin = this.add.sprite(1000, 200, 'cframe1');
+                                coin.setScale(0.01);
+                                coin.anims.play('coinAnimation');
+
+                                this.physics.add.existing(coin);
+                                this.physics.add.overlap(bird, coin, coinEatern, null, this);
+                            }
+                            else if (t % 3 == 1) {
+                                coin = this.add.sprite(1000, 200, 'cherry');
+                                coin.setScale(0.05);
+                                this.physics.add.existing(coin);
+                                this.physics.add.overlap(bird, coin, cherryEaten, null, this);
+                            }
+                            else {
+                                coin = this.add.sprite(1000, 200, 'forward');
+                                coin.setScale(0.15);
+                                coin.flipX = true;
+                                this.physics.add.existing(coin);
+                                this.physics.add.overlap(bird, coin, forwardEaten, null, this);
+                            }
+                            coin.setDepth(4);
+                        }
+                    }
+                }
+
+                if (tmp % 100 == 0) {
+                    var q = getRandomInt(77, 323);
+
+                    pipeUp.push(this.physics.add.image(100, 100, 'pipe'));
+                    collisionsUp.push(this.add.rectangle(100, 100, 35, 312, 0xff0000));
+                    collisionsUp[collisionsUp.length - 1].setAlpha(0);
+                    collisionsUp[collisionsUp.length - 1].x = 1000;
+                    collisionsUp[collisionsUp.length - 1].y = q + pipeUp[pipeUp.length - 1].height / 2 +65;
+
+                    pipeUp[pipeUp.length - 1].x = 1000;
+                    pipeUp[pipeUp.length - 1].y = q + pipeUp[pipeUp.length - 1].height / 2 + 50;
+
+                    pipeDown.push(this.physics.add.image(100, 100, 'pipe'));
+                    collisionsDown.push(this.add.rectangle(100, 100, 35, 312, 0xff0000));
+                    collisionsDown[collisionsDown.length - 1].setAlpha(0);
+                    collisionsDown[collisionsDown.length - 1].x = 1000;
+                    collisionsDown[collisionsDown.length - 1].y = q - pipeDown[pipeDown.length - 1].height / 2 -65;
+                    pipeDown[pipeDown.length - 1].flipY = true;
+                    pipeDown[pipeDown.length - 1].x = 1000;
+                    pipeDown[pipeDown.length - 1].y = q - pipeDown[pipeDown.length - 1].height / 2 - 50;
+
+                    this.physics.add.existing(collisionsUp[collisionsUp.length - 1]);
+                    this.physics.add.existing(collisionsDown[collisionsDown.length - 1]);
+
+                    this.physics.add.overlap(bird, collisionsUp[collisionsUp.length - 1], setGameOver, null, this);
+                    this.physics.add.overlap(bird, collisionsDown[collisionsDown.length - 1], setGameOver, null, this);
+
+                }
+
+                if (!gameOver && !paused) {
+                    if (tmp % 100 == 0 && tmp > 300) {
+                        score += 1;
+                        if (sound_effects_on) score_add.play();
+                    }
+                }
+
+                if (!gameOver && !paused) {
+                    for (var i = 0; i < pipeUp.length; i++) {
+                        if (tmpForwarded >= tmp) {
+                            pipeDown[i].x -= 1;
+                            pipeUp[i].x -= 1;
+                        }
+                        else {
+                            pipeDown[i].x -= 2;
+                            pipeUp[i].x -= 2;
+                        }
+                    }
+
+                    for (var i = 0; i < collisionsUp.length; i++) {
+                        if (tmpForwarded >= tmp) {
+                            collisionsUp[i].x -= 1;
+                            collisionsDown[i].x -= 1;
+                        }
+                        else {
+                            collisionsUp[i].x -= 2;
+                            collisionsDown[i].x -= 2;
+                        }
+                    }
+                }
+
+
+
+                if (gameOver) {
+                    if (velocityY < 200)velocityY = 200;
+                    if (velocityY < 300) velocityY += 15;
+                    else velocityY += 5;
+                    bird.angle = 20;
+                }
+                else {
+                    if (velocityY > 0) {
+                        bird.angle = 20;
+                    }
+                    else if (velocityY < 0) {
+                        bird.angle = -20;
+                    }
+                    else bird.angle = 0;
+                }
+                if (velocityY < 300) velocityY += 15;
+                else if (velocityY >= 300) velocityY += 15;
+
+
+                if (!paused) {
+                    bird.setVelocityY(velocityY);
+                }
+                else bird.setVelocityY(0);
+            }
+        }
+
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 400,
+            scene: Example,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 }
+                }
+            },
+            fps: {
+                target: 60, 
+                forceSetTimeOut: true
+            }
+        };
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function forwardEaten() {
+            tmpForwarded = tmp + 300;
+            coin.x = -100;
+            if (sound_effects_on) coinPicked.play();
+        }
+
+        function coinEatern() {
+            score += 2;
+            coin.x = -100;
+            if (sound_effects_on) coinPicked.play();
+        }
+
+        function cherryEaten() {
+            bird.setAlpha(0.5);
+            tmpToGetBack = tmp + 300;
+            coin.x = -100;
+            if(sound_effects_on) coinPicked.play();
+        }
+
+        function setGameOver() {
+            if (tmpToGetBack > tmp) return;
+            if (gameOver == false) {
+                if (sound_effects_on) gameOver_music.play();
+            }
+            gameOver = true;
+            background_music.stop();
+            if (highScore < score) {
+                localStorage.setItem('key', score);
+            }
+            updateHighScore();
+        }
+
+        function updateHighScore() {
+            highScore = localStorage.getItem('key');
+            if (highScore == null) {
+                highScore = 0;
+            }
+            textHighScoreAsset.setText("High score: "+highScore);
+        }
+
+        const game = new Phaser.Game(config);
+    </script>
+
+</body>
+</html>
